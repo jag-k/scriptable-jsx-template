@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "jsx": "react",
+    "moduleResolution": "node",
+    "target": "ES2022",
+    "module": "ES2022",
+    "lib": [
+      "ES2021"
+    ],
+    "jsxFactory": "ScriptableJSX.createElement",
+    "typeRoots": [
+      "./node_modules/@types",
+      "./node_modules/@jag-k/scriptable-jsx",
+      "./src/types"
+    ],
+    "types": [
+      "node",
+      "@jag-k/scriptable-jsx/types",
+      "@types/scriptable-ios",
+    ],
+    "resolveJsonModule": true
+  }
+}

@@ -1,0 +1,64 @@
+# This GitHub Actions Workflow based on GH Action for cleaning up the IntelliJ Platform Plugin Template
+
+name: Template Cleanup
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  template-cleanup:
+    name: Template Cleanup
+    runs-on: ubuntu-latest
+    if: github.event.repository.name != 'scriptable-jsx-template'
+    steps:
+      - name: Check-out current repository
+        uses: actions/checkout@v4
+
+      - name: Cleanup project
+        run: |
+          export LC_CTYPE=C
+          export LANG=C
+          # Prepare variables
+          NAME="${GITHUB_REPOSITORY##*/}"
+          ACTOR=$GITHUB_ACTOR
+          SAFE_NAME=$(echo $NAME | sed 's/[^a-zA-Z0-9]//g' | tr '[:upper:]' '[:lower:]')
+          SAFE_ACTOR=$(echo $ACTOR | sed 's/[^a-zA-Z0-9]//g' | tr '[:upper:]' '[:lower:]')
+          GROUP="com.github.$SAFE_ACTOR.$SAFE_NAME"
+          # Replace placeholders in the template-cleanup files
+          sed -i "s/%NAME%/$NAME/g" .github/template-cleanup/*
+          sed -i "s/%REPOSITORY%/${GITHUB_REPOSITORY/\//\\/}/g" .github/template-cleanup/*
+          sed -i "s/%GROUP%/$GROUP/g" .github/template-cleanup/*
+          sed -i "s/%ACTOR%/$ACTOR/g" .github/template-cleanup/*
+          # Remove lines marked with #REMOVE-ON-CLEANUP#
+          find . -type f -exec sed -i '/#REMOVE-ON-CLEANUP#/d' {} +
+          # Move content
+          cp -R .github/template-cleanup/* .
+          # Cleanup
+          rm -rf \
+            .github/template-cleanup \
+            .github/workflows/template-cleanup.yml \
+            LICENSE
+
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v4.0.2
+
+      - name: Install dependencies to fix it
+        run: npm i --include=dev
+
+      - name: Commit modified files
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add .
+          git commit -m "Template cleanup"
+
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          branch: main
+          github_token: ${{ secrets.GITHUB_TOKEN }}

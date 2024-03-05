@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    if: github.event.repository.name != 'scriptable-jsx-template'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v4.0.2
+
+      - name: Install dependencies
+        run: npm ci --include=dev
+
+      - name: Build
+        run: npm run build
+
+      - name: Update Gist
+        if: ${{ github.event_name == 'push' }}
+        env:
+          GIST_TOKEN: ${{ secrets.GIST_TOKEN }}
+          GIST_ID: ${{ secrets.GIST_ID }}
+        # language=bash
+        run: |
+          curl \
+            -X PATCH \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: token $GIST_TOKEN" \
+            "https://api.github.com/gists/$GIST_ID" \
+            -d "$(node .github/workflows/getFilesForGist.js)"
